@@ -1247,8 +1247,16 @@
                     case 'PLAYING':
                         this.gameTime += dt; this.waveTimer -= dt; this.eventTimer -= dt;
 
-                        // TERMINATION: Strict time limit or last survivor
-                        if (this.gameTime >= this.targetDuration || this.chars.filter(c => c.state === 'beach').length <= 1) {
+                        // TERMINATION: Wait for exactly ONE survivor before switching to Result
+                        const survivors = this.chars.filter(c => c.state === 'beach');
+                        if (this.gameTime >= this.targetDuration) {
+                            if (survivors.length > 1) {
+                                // Time's up but survivors left! Trigger Sudden Death wave immediately if not already active
+                                if (!this.wave.active && this.state === 'PLAYING') this._waveHit();
+                            } else if (survivors.length <= 1) {
+                                this._checkEnd();
+                            }
+                        } else if (survivors.length <= 1) {
                             this._checkEnd();
                         }
 
@@ -1307,8 +1315,9 @@
                     sweep = Math.max(0, need + r(-1, 0));
                 }
 
-                // Guard: don't sweep too many at once (max 4 on normal waves)
-                sweep = Math.min(sweep, beach.length - 1, 4);
+                // Guard: don't sweep too many at once except at the very end
+                const maxSweep = (prog > 0.8) ? 20 : 4;
+                sweep = Math.min(sweep, beach.length - 1, maxSweep);
 
                 this.wave.targets = shuffle([...beach]).slice(0, sweep);
                 this.wave.x = this.MAP_W; this.wave.active = true; this.wave.animT = 0;
@@ -1342,8 +1351,9 @@
 
             _checkEnd() {
                 const s = this.chars.filter(c => c.state === 'beach');
-                if (this.gameTime >= this.targetDuration || s.length <= 1) {
-                    this.state = 'RESULT'; this.resultChar = s[r(0, s.length - 1)] || null;
+                // Strictly wait for 1 person to be left
+                if (s.length <= 1) {
+                    this.state = 'RESULT'; this.resultChar = s[0] || null;
                     sfx.count(); setTimeout(() => this._showResult(), 2000);
                     return true;
                 } return false;
