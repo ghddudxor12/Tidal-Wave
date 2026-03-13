@@ -1124,8 +1124,8 @@
                 if (!this.bg.src.endsWith(bgSrc)) this.bg.src = bgSrc;
 
                 // UI Cleanup (Strict)
-                const fsBtn = document.getElementById('btn-fs');
-                if (fsBtn) fsBtn.style.display = (this.env === 'DESKTOP') ? 'none' : 'block';
+                const fsBtn = document.querySelector('.fs-toggle');
+                if (fsBtn) fsBtn.style.display = (this.env === 'DESKTOP') ? 'none' : 'flex';
                 const hint = document.querySelector('.cam-hint');
                 if (hint) hint.style.display = (this.env === 'DESKTOP') ? 'none' : 'block';
 
@@ -1143,10 +1143,10 @@
 
                 // Strict Cam Setup
                 if (this.env === 'DESKTOP') {
-                    // Desktop: Fixed height fit, centered width, no clipping
-                    this.cam.zoom = this.winHeight / 720;
+                    // Desktop: Fill-to-cover (like background-size: cover) - no void space
+                    this.cam.zoom = Math.max(this.winWidth / 1280, this.winHeight / 720);
                     this.cam.x = (1280 - this.winWidth / this.cam.zoom) / 2;
-                    this.cam.y = 0;
+                    this.cam.y = (720 - this.winHeight / this.cam.zoom) / 2;
                 } else {
                     // Mobile: ALWAYS use height-fit to prevent bottom clipping on 20:9, 21:9 etc.
                     // Width overflow is handled by horizontal panning
