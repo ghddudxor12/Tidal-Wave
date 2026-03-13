@@ -1111,17 +1111,16 @@
                 if (this.winWidth < 600 && isPortrait) {
                     this.charScale = 1.3;
                 } else if (isMobile || this.winHeight < 600) {
-                    this.charScale = 1.5; // Final polish: 1.5x scale as requested
+                    this.charScale = 2.5; // Reverted to 2.5x as requested
                 } else {
                     this.charScale = 2.5;
                 }
 
-                // Initial Cam Setup (Fit Width: 1280px map width to screen width)
+                // Initial Cam Setup (Centering/Fill logic)
                 if (this.state === 'LOBBY' || (this.cam.zoom === 1 && this.cam.x === 0)) {
-                    // Prioritize fitting the width (1280px) to winWidth
-                    this.cam.zoom = this.winWidth / 1280;
-                    this.cam.x = 0; // Start at left
-                    this.cam.y = (720 - this.winHeight / this.cam.zoom) / 2; // Center vertically
+                    this.cam.zoom = Math.max(this.winWidth / 1280, this.winHeight / 720);
+                    this.cam.x = (1280 - this.winWidth / this.cam.zoom) / 2;
+                    this.cam.y = (720 - this.winHeight / this.cam.zoom) / 2;
                     this._clampCam();
                 }
             }
