@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌊 Tidal Wave v2.4 - 커피 내기</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cyan: #5ce0d8;
+            --gold: #f7c948;
+            --dark: #0d1b2a;
+            --red: #e74c3c
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Press Start 2P', monospace;
+            color: #e8e8e8
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            border: none
+        }
+
+        input,
+        select {
+            font-family: inherit;
+            outline: none
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            position: relative
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0
+        }
+
+        .screen.active {
+            display: flex
+        }
+
+        /* ========== LOBBY ========== */
+        #lobby {
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(180deg, #0f1a2e 0%, #0d1b2a 40%, #162a3a 100%);
+            overflow-y: auto;
+            padding: 30px;
+            gap: 10px
+        }
+
+        #lobby h1 {
+            font-size: clamp(22px, 6vw, 48px);
+            color: var(--cyan);
+            text-shadow: 0 0 30px #5ce0d860, 0 5px 0 #2a8a82;
+            margin-top: 10px
+        }
+
+        .sub {
+            font-size: clamp(12px, 1.5vw, 16px);
+            color: var(--gold);
+            margin-bottom: 15px
+        }
+
+        .lobby-wrap {
+            display: flex;
+            gap: 20px;
+            max-width: 1100px;
+            width: 100%
+        }
+
+        .lobby-l,
+        .lobby-r {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px
+        }
+
+        .lobby-r {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--cyan);
+            padding: 20px;
+            border-radius: 6px
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center
+        }
+
+        .label {
+            font-size: 14px;
+            color: var(--cyan);
+            margin-bottom: 6px
+        }
+
+        #name-input,
+        #time-input {
+            background: #0b1520;
+            border: 2px solid var(--cyan);
+            color: #fff;
+            padding: 10px;
+            font-size: 13px
+        }
+
+        #name-input:focus,
+        #time-input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 10px var(--gold)
+        }
+
+        #time-input {
+            width: 90px;
+            text-align: center
+        }
+
+        .btn {
+            background: var(--cyan);
+            color: #0a0a1a;
+            padding: 10px 18px;
+            font-size: 11px;
+            transition: .15s;
+            border-radius: 2px
+        }
+
+        .btn:hover {
+            filter: brightness(1.15);
+            transform: translateY(-2px)
+        }
+
+        .btn-sm {
+            padding: 10px 16px;
+            font-size: 14px
+        }
+
+        .btn-red {
+            background: var(--red)
+        }
+
+        .btn-gold {
+            background: var(--gold);
+            font-size: 16px;
+            padding: 15px 40px;
+            box-shadow: 0 6px 0 #c4941a;
+            margin-top: 10px
+        }
+
+        .btn-gold:disabled {
+            background: #333;
+            color: #555;
+            box-shadow: 0 4px 0 #222;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        .gender-row {
+            display: flex;
+            border: 2px solid var(--cyan);
+            border-radius: 4px;
+            overflow: hidden
+        }
+
+        .g-btn {
+            flex: 1;
+            background: transparent;
+            color: var(--cyan);
+            padding: 12px;
+            font-size: 14px;
+            text-align: center
+        }
+
+        .g-btn.active {
+            background: var(--cyan);
+            color: #0a0a1a
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            max-height: 180px;
+            overflow-y: auto;
+            background: #050a12;
+            padding: 4px
+        }
+
+        .char-cell {
+            aspect-ratio: 0.8;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #0b1520
+        }
+
+        .char-cell:hover {
+            border-color: var(--cyan)
+        }
+
+        .char-cell.sel {
+            border-color: var(--gold);
+            background: #1a1500
+        }
+
+        .char-cell canvas {
+            image-rendering: pixelated;
+            width: 100%;
+            height: 100%
+        }
+
+        .plist {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-content: flex-start
+        }
+
+        .ptag {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #0f1e30;
+            border-left: 4px solid var(--cyan);
+            padding: 8px 14px;
+            font-size: 16px
+        }
+
+        .ptag canvas {
+            image-rendering: pixelated;
+            width: 48px;
+            height: 72px
+        }
+
+        .ptag .x {
+            color: var(--red);
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 13px
+        }
+
+        /* ========== GAME ========== */
+        #game-screen {
+            background: #87CEEB;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            image-rendering: pixelated
+        }
+
+        #game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            padding: 20px
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%
+        }
+
+        .timer-box {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 5px 12px;
+            font-size: 11px;
+            color: var(--gold);
+            border: 2px solid var(--gold);
+            display: inline-block;
+            align-self: flex-start;
+        }
+
+        .survivor-list-box {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border: 2px solid var(--cyan);
+            width: 200px;
+            max-height: 85vh;
+            overflow-y: auto
+        }
+
+        .survivor-list-box h3 {
+            font-size: 16px;
+            color: var(--cyan);
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--cyan);
+            padding-bottom: 5px
+        }
+
+        .sv-item {
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff
+        }
+
+        .sv-item canvas {
+            image-rendering: pixelated;
+            width: 16px;
+            height: 24px
+        }
+
+        /* ========== RESULT ========== */
+        #result {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.95);
+            gap: 30px;
+            padding: 20px;
+            z-index: 100
+        }
+
+        #result h2 {
+            font-size: 42px;
+            color: var(--gold);
+            text-shadow: 0 0 30px #f7c948, 0 4px 0 #8b6500
+        }
+
+        .loser-box {
+            border: 6px solid var(--gold);
+            background: rgba(247, 201, 72, 0.1);
+            padding: 50px 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            position: relative
+        }
+
+        .loser-box::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border: 2px solid var(--gold);
+            opacity: 0.3;
+            pointer-events: none
+        }
+
+        .loser-name {
+            font-size: 64px;
+            color: var(--red);
+            text-shadow: 0 0 30px #e74c3c, 0 6px 0 #8b0000
+        }
+
+        .winner-sub {
+            font-size: 12px;
+            color: #ccc;
+            text-align: center;
+            line-height: 1.6
+        }
+
+        /* ========== MOBILE RESPONSIVE ========== */
+        @media (max-width: 768px) {
+
+            /* --- Lobby core layout: stack vertically --- */
+            #lobby {
+                padding: 16px;
+                gap: 8px
+            }
+
+            #lobby h1 {
+                font-size: clamp(18px, 7vw, 32px)
+            }
+
+            .sub {
+                font-size: 11px;
+                margin-bottom: 8px
+            }
+
+            .lobby-wrap {
+                flex-direction: column;
+                gap: 14px
+            }
+
+            .lobby-l,
+            .lobby-r {
+                width: 100%
+            }
+
+            /* --- Inputs & buttons: touch-friendly --- */
+            #name-input {
+                flex: 1;
+                font-size: 16px;
+                /* prevents iOS zoom */
+                padding: 12px
+            }
+
+            #time-input {
+                font-size: 16px;
+                padding: 12px;
+                width: 80px
+            }
+
+            .btn {
+                padding: 14px 20px;
+                font-size: 13px
+            }
+
+            .btn-sm {
+                padding: 12px;
+                font-size: 13px
+            }
+
+            .btn-gold {
+                font-size: 18px;
+                padding: 18px 30px;
+                width: 100%
+            }
+
+            .g-btn {
+                padding: 14px;
+                font-size: 16px
+            }
+
+            .label {
+                font-size: 13px
+            }
+
+            /* --- Char selection grid: 3 across on mobile --- */
+            .char-grid {
+                grid-template-columns: repeat(3, 1fr);
+                max-height: 240px
+            }
+
+            /* --- Player tag list: smaller icons --- */
+            .ptag {
+                font-size: 14px;
+                padding: 6px 10px;
+                gap: 8px
+            }
+
+            .ptag canvas {
+                width: 36px;
+                height: 54px
+            }
+
+            /* --- Game HUD: compact on mobile --- */
+            #game-ui {
+                padding: 8px
+            }
+
+            .timer-box {
+                font-size: 10px;
+                padding: 4px 8px
+            }
+
+            /* Survivor list: smaller & semi-transparent on mobile */
+            .survivor-list-box {
+                width: 130px;
+                padding: 8px;
+                background: rgba(0, 0, 0, 0.55)
+            }
+
+            .survivor-list-box h3 {
+                font-size: 10px
+            }
+
+            .sv-item {
+                font-size: 11px;
+                margin-bottom: 6px;
+                gap: 6px
+            }
+
+            .sv-item canvas {
+                width: 14px;
+                height: 21px
+            }
+
+            /* --- Result screen: compact --- */
+            #result h2 {
+                font-size: 24px
+            }
+
+            .loser-box {
+                padding: 24px 30px
+            }
+
+            .loser-name {
+                font-size: 36px
+            }
+
+            .winner-sub {
+                font-size: 9px
+            }
+        }
+
+        /* Extra small phones */
+        @media (max-width: 420px) {
+            #lobby h1 {
+                font-size: 20px
+            }
+
+            .char-grid {
+                grid-template-columns: repeat(3, 1fr)
+            }
+
+            .ptag {
+                font-size: 12px
+            }
+
+            .loser-name {
+                font-size: 28px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- ===== LOBBY ===== -->
+        <div id="lobby" class="screen active">
+            <h1>🌊 TIDAL WAVE 🌊</h1>
+            <div class="sub">전문가급 픽셀아트 & 극한의 서바이벌!</div>
+            <div class="lobby-wrap">
+                <div class="lobby-l">
+                    <div>
+                        <div class="label">⏱ 플레이타임(초)</div>
+                        <input type="number" id="time-input" value="30" min="5" max="300">
+                    </div>
+                    <div>
+                        <div class="label">👤 참가자 등록 (2~20명)</div>
+                        <div class="row" style="margin-bottom:10px">
+                            <input type="text" id="name-input" placeholder="이름..." maxlength="8">
+                            <button class="btn" id="btn-add">추가</button>
+                        </div>
+                        <div class="gender-row">
+                            <div class="g-btn active" data-g="M">♂ 남성</div>
+                            <div class="g-btn" data-g="F">♀ 여성</div>
+                        </div>
+                        <div class="char-grid" id="char-grid"></div>
+                    </div>
+                    <div class="row">
+                        <button class="btn btn-sm" style="flex:1" onclick="addSamples()">샘플 10명</button>
+                        <button class="btn btn-sm btn-red" style="flex:1" onclick="clearAll()">초기화</button>
+                    </div>
+                    <button class="btn btn-gold" id="btn-start" disabled>🌊 버티기 시작!</button>
+                </div>
+                <div class="lobby-r">
+                    <div class="label">대기자 명단 (<span id="p-cnt">0</span>/20)</div>
+                    <div class="plist" id="plist"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== GAME ===== -->
+        <div id="game-screen" class="screen">
+            <canvas id="canvas"></canvas>
+            <div id="game-ui">
+                <div class="hud-top">
+                    <div class="timer-box" id="timer-txt">0:00 / 30s</div>
+                    <div class="survivor-list-box">
+                        <h3>현황판</h3>
+                        <div id="sv-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== RESULT ===== -->
+        <div id="result" class="screen"></div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  EXPERT PIXEL SPRITES (16x24 - High Detail)
+        // ============================================================
+        const SPRITE_W = 16, SPRITE_H = 24;
+
+        // 0:trans, 1:hair, 2:hair_shadow, 3:skin, 4:skin_shadow, 5:shirt, 6:shirt_shadow, 7:pants, 8:shoes, 9:outline
+        const MALE_MASTER = [
+            [0, 0, 0, 0, 9, 9, 9, 9, 9, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 9, 1, 1, 1, 1, 1, 9, 0, 0, 0, 0, 0, 0],
+            [0, 0, 9, 1, 1, 1, 1, 1, 1, 1, 9, 0, 0, 0, 0, 0],
+            [0, 9, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 0, 0, 0, 0],
+            [0, 9, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 0, 0, 0, 0],
+            [0, 9, 2, 2, 3, 3, 3, 3, 3, 2, 2, 9, 0, 0, 0, 0],
+            [0, 9, 2, 3, 3, 0, 3, 0, 3, 3, 2, 9, 0, 0, 0, 0], // Eyes (0)
+            [0, 9, 2, 3, 3, 3, 3, 3, 3, 3, 2, 9, 0, 0, 0, 0],
+            [0, 0, 9, 4, 3, 3, 3, 3, 3, 4, 9, 0, 0, 0, 0, 0],
+            [0, 0, 0, 9, 9, 9, 9, 9, 9, 9, 0, 0, 0, 0, 0, 0],
+            [0, 0, 9, 5, 5, 5, 5, 5, 5, 5, 9, 0, 0, 0, 0, 0],
+            [0, 9, 5, 5, 5, 5, 5, 5, 5, 5, 5, 9, 0, 0, 0, 0],
+            [9, 3, 5, 6, 5, 5, 5, 5, 5, 6, 5, 3, 9, 0, 0, 0],
+            [9, 3, 5, 6, 5, 5, 5, 5, 5, 6, 5, 3, 9, 0, 0, 0],
+            [0, 9, 5, 6, 5, 5, 5, 5, 5, 6, 5, 9, 0, 0, 0, 0],
+            [0, 0, 9, 5, 5, 5, 5, 5, 5, 5, 9, 0, 0, 0, 0, 0],
+            [0, 0, 9, 7, 7, 7, 9, 7, 7, 7, 9, 0, 0, 0, 0, 0],
+            [0, 9, 7, 7, 7, 7, 9, 7, 7, 7, 7, 9, 0, 0, 0, 0],
+            [0, 9, 7, 7, 7, 7, 9, 7, 7, 7, 7, 9, 0, 0, 0, 0],
+            [0, 9, 7, 7, 7, 7, 9, 7, 7, 7, 7, 9, 0, 0, 0, 0],
+            [0, 9, 7, 7, 0, 0, 9, 0, 0, 7, 7, 9, 0, 0, 0, 0],
+            [0, 9, 8, 8, 0, 0, 9, 0, 0, 8, 8, 9, 0, 0, 0, 0],
+            [0, 9, 8, 8, 0, 0, 9, 0, 0, 8, 8, 9, 0, 0, 0, 0],
+            [0, 0, 9, 9, 0, 0, 0, 0, 0, 9, 9, 0, 0, 0, 0, 0]];
+
+        const FEMALE_MASTER = [
+            [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+            [0, 1, 1, 1, 9, 9, 9, 9, 9, 1, 1, 1, 0, 0, 0, 0],
+            [0, 1, 1, 9, 3, 3, 3, 3, 3, 9, 1, 1, 0, 0, 0, 0],
+            [0, 1, 9, 3, 3, 0, 3, 0, 3, 3, 9, 1, 0, 0, 0, 0],
+            [0, 1, 9, 3, 3, 3, 3, 3, 3, 3, 9, 1, 0, 0, 0, 0],
+            [0, 1, 9, 3, 3, 3, 3, 3, 3, 3, 9, 1, 0, 0, 0, 0],
+            [0, 0, 1, 9, 4, 3, 3, 3, 4, 9, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 9, 9, 9, 9, 9, 9, 9, 0, 0, 0, 0, 0, 0],
+            [0, 0, 9, 5, 5, 5, 5, 5, 5, 5, 9, 1, 0, 0, 0, 0],
+            [0, 9, 5, 5, 5, 5, 5, 5, 5, 5, 5, 9, 1, 0, 0, 0],
+            [9, 3, 5, 6, 5, 5, 5, 5, 5, 6, 5, 3, 9, 1, 0, 0],
+            [9, 3, 5, 6, 5, 5, 5, 5, 5, 6, 5, 3, 9, 1, 0, 0],
+            [0, 9, 5, 6, 5, 5, 5, 5, 5, 6, 5, 9, 1, 0, 0, 0],
+            [0, 0, 9, 5, 5, 5, 5, 5, 5, 5, 9, 1, 0, 0, 0, 0],
+            [0, 0, 9, 5, 5, 5, 9, 5, 5, 5, 9, 1, 0, 0, 0, 0],
+            [0, 9, 5, 5, 5, 5, 9, 5, 5, 5, 5, 9, 1, 0, 0, 0],
+            [0, 9, 5, 5, 5, 5, 9, 5, 5, 5, 5, 9, 1, 0, 0, 0],
+            [0, 9, 3, 3, 0, 0, 9, 0, 0, 3, 3, 9, 1, 0, 0, 0],
+            [0, 9, 3, 3, 0, 0, 9, 0, 0, 3, 3, 9, 1, 0, 0, 0],
+            [0, 9, 8, 8, 0, 0, 9, 0, 0, 8, 8, 9, 0, 0, 0, 0],
+            [0, 9, 8, 8, 0, 0, 9, 0, 0, 8, 8, 9, 0, 0, 0, 0],
+            [0, 0, 9, 9, 0, 0, 0, 0, 0, 9, 9, 0, 0, 0, 0, 0]];
+
+        const M_PALS_HD = [
+            { h1: '#4a2c17', h2: '#351e0f', s1: '#3d5afe', s2: '#283593', p: '#263238', f: '#3E2723' },
+            { h1: '#1a1a1a', h2: '#000000', s1: '#ef5350', s2: '#c62828', p: '#37474F', f: '#212121' },
+            { h1: '#8D6E63', h2: '#5D4037', s1: '#66bb6a', s2: '#2e7d32', p: '#212121', f: '#3E2723' },
+            { h1: '#FFB300', h2: '#F57F17', s1: '#ab47bc', s2: '#7b1fa2', p: '#311B92', f: '#4E342E' },
+            { h1: '#546E7A', h2: '#263238', s1: '#ffa726', s2: '#ef6c00', p: '#BF360C', f: '#263238' }];
+        const F_PALS_HD = [
+            { h1: '#ad1457', h2: '#880e4f', s1: '#f48fb1', s2: '#c2185b', p: '#FDE8D0', f: '#880e4f' },
+            { h1: '#4a148c', h2: '#311b92', s1: '#ce93d8', s2: '#7b1fa2', p: '#FDE8D0', f: '#4a148c' },
+            { h1: '#0d47a1', h2: '#0a214d', s1: '#90caf9', s2: '#1565c0', p: '#FDE8D0', f: '#0d47a1' },
+            { h1: '#1b5e20', h2: '#0d3311', s1: '#a5d6a7', s2: '#2e7d32', p: '#FDE8D0', f: '#1b5e20' },
+            { h1: '#bf360c', h2: '#7e230a', s1: '#ffccbc', s2: '#d84315', p: '#FDE8D0', f: '#bf360c' }];
+
+        // ============================================================
+        //  FLYER DEFINITIONS (Pixel Art Sprites)
+        // ============================================================
+        const FLYERS = {
+            DRAGON: { name: '🐉 드래곤', col1: '#2e7d32', col2: '#1b5e20', col3: '#a5d6a7', w: 52, h: 28, captureLabel: '포획!', exitDX: 500, exitDY: -180 },
+            PLANE: { name: '✈️ 경비행기', col1: '#f57f17', col2: '#e65100', col3: '#fff9c4', w: 60, h: 18, captureLabel: '로프!', exitDX: 600, exitDY: -60 },
+            GLIDER: { name: '🪂 글라이더', col1: '#1565c0', col2: '#0d47a1', col3: '#bbdefb', w: 70, h: 14, captureLabel: '낚아챔!', exitDX: 550, exitDY: -100 },
+            DRONE: { name: '🚁 드론', col1: '#546e7a', col2: '#37474f', col3: '#cfd8dc', w: 40, h: 20, captureLabel: '집게!', exitDX: 480, exitDY: -200 },
+            EAGLE: { name: '🦅 독수리', col1: '#5d4037', col2: '#3e2723', col3: '#efebe9', w: 56, h: 20, captureLabel: '발톱!', exitDX: 520, exitDY: -150 }
+        };
+
+        // ============================================================
+        //  WAVE FRAMES (Breaking effect, Right to Left)
+        // ============================================================
+        const WAVE_FRAMES = [
+            { foam: [20, 15, 22, 18, 20, 16], height: 20 },
+            { foam: [50, 45, 55, 52, 50, 48], height: 60 },
+            { foam: [80, 75, 90, 85, 80, 78], height: 100 },
+            { foam: [30, 25, 35, 32, 30, 28], height: 40 }
+        ];
+
+        // ============================================================
+        //  PIXEL ART FLYER DRAWING FUNCTIONS
+        // ============================================================
+        function drawDragon(ctx, x, y, t) {
+            const sc = 3;
+            // Body
+            const bodyPx = [
+                [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 2, 2, 3, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0], [1, 2, 2, 3, 3, 3, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0],
+                [1, 2, 2, 3, 3, 3, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0], [0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0],
+                [0, 0, 1, 1, 2, 2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]];
+            // Wings flapping
+            const wingY = Math.sin(t * 8) * 4;
+            ctx.fillStyle = '#1b5e20'; ctx.beginPath();
+            ctx.moveTo(x - 40, y + wingY); ctx.lineTo(x - 80, y - 20 + wingY); ctx.lineTo(x - 60, y + 8 + wingY); ctx.closePath(); ctx.fill();
+            ctx.moveTo(x + 40, y + wingY); ctx.lineTo(x + 80, y - 20 + wingY); ctx.lineTo(x + 60, y + 8 + wingY); ctx.closePath(); ctx.fill();
+            // Body pixels
+            const ox = x - bodyPx[0].length * sc / 2, oy = y - bodyPx.length * sc / 2;
+            bodyPx.forEach((row, ry) => row.forEach((v, cx2) => {
+                if (!v) return;
+                ctx.fillStyle = v === 1 ? '#000' : v === 2 ? '#2e7d32' : v === 3 ? '#a5d6a7' : '#fff';
+                ctx.fillRect(ox + cx2 * sc, oy + ry * sc, sc, sc);
+            }));
+            // Eye
+            ctx.fillStyle = '#ff0'; ctx.fillRect(x - 10, y - 4, 4, 4);
+            ctx.fillStyle = '#000'; ctx.fillRect(x - 9, y - 3, 2, 2);
+        }
+
+        function drawPlane(ctx, x, y, t) {
+            const sc = 3;
+            // Fuselage
+            ctx.fillStyle = '#000'; ctx.fillRect(x - 30, y - 4 - 1, 62, 10);
+            ctx.fillStyle = '#f57f17'; ctx.fillRect(x - 30, y - 4, 60, 8);
+            // Cockpit
+            ctx.fillStyle = '#fff9c4'; ctx.fillRect(x + 10, y - 4, 16, 8);
+            ctx.fillStyle = '#80d8ff'; ctx.fillRect(x + 12, y - 3, 10, 6);
+            // Wings
+            ctx.fillStyle = '#000'; ctx.fillRect(x - 20, y + 4, 50, 4);
+            ctx.fillRect(x - 20, y - 10, 50, 4);
+            ctx.fillStyle = '#ef6c00';
+            ctx.fillRect(x - 18, y + 4, 46, 3);
+            ctx.fillRect(x - 18, y - 9, 46, 3);
+            // Tail
+            ctx.fillStyle = '#000'; ctx.fillRect(x - 34, y - 10, 6, 16);
+            ctx.fillStyle = '#f57f17'; ctx.fillRect(x - 33, y - 9, 5, 14);
+            // Rope (dangling)
+            ctx.strokeStyle = '#a1887f'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x, y + 4); ctx.lineTo(x, y + 50 + Math.sin(t * 5) * 8); ctx.stroke();
+        }
+
+        function drawGlider(ctx, x, y, t) {
+            const tilt = Math.sin(t * 3) * 0.18;
+            ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+            // Canopy
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.moveTo(-70, 0); ctx.quadraticCurveTo(0, -30, 70, 0); ctx.lineTo(70, 5); ctx.quadraticCurveTo(0, -22, -70, 5); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#1565c0';
+            ctx.beginPath(); ctx.moveTo(-68, 1); ctx.quadraticCurveTo(0, -28, 68, 1); ctx.lineTo(68, 4); ctx.quadraticCurveTo(0, -22, -68, 4); ctx.closePath(); ctx.fill();
+            // Colored panels
+            [['#ef5350', -50], ['#fff9c4', -20], ['#ef5350', 10], ['#fff9c4', 40]].forEach(([c, ox2]) => {
+                ctx.fillStyle = c;
+                ctx.beginPath(); ctx.moveTo(ox2, 0); ctx.quadraticCurveTo(ox2 + 15, -25, ox2 + 30, 0);
+                ctx.lineTo(ox2 + 30, 3); ctx.quadraticCurveTo(ox2 + 15, -20, ox2, 3); ctx.closePath(); ctx.fill();
+            });
+            // Risers
+            ctx.strokeStyle = '#a1887f'; ctx.lineWidth = 1.5;
+            for (let i = -3; i <= 3; i += 2) {
+                ctx.beginPath(); ctx.moveTo(i * 10, 4); ctx.lineTo(i * 4, 50); ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawDrone(ctx, x, y, t) {
+            const rot = t * 15;
+            // Arms
+            [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([dx, dy]) => {
+                ctx.fillStyle = '#546e7a'; ctx.fillRect(x + dx * 5, y + dy * 5, dx * 25, 6);
+                // Propeller
+                ctx.save(); ctx.translate(x + dx * 30, y + dy * 5 + 3); ctx.rotate(rot * dx * dy);
+                ctx.fillStyle = '#90a4ae';
+                ctx.fillRect(-14, -2, 28, 4);
+                ctx.fillStyle = '#b0bec5';
+                ctx.save(); ctx.rotate(Math.PI / 2); ctx.fillRect(-14, -2, 28, 4); ctx.restore();
+                ctx.restore();
+            });
+            // Body
+            ctx.fillStyle = '#000'; ctx.fillRect(x - 12, y - 9, 24, 20);
+            ctx.fillStyle = '#546e7a'; ctx.fillRect(x - 10, y - 8, 20, 18);
+            // Lens
+            ctx.fillStyle = '#29b6f6'; ctx.beginPath(); ctx.arc(x, y + 2, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x, y + 2, 2, 0, Math.PI * 2); ctx.fill();
+            // Claw (dangling + grabbing)
+            ctx.strokeStyle = '#546e7a'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x, y + 10); ctx.lineTo(x, y + 45 + Math.sin(t * 6) * 5); ctx.stroke();
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x - 8, y + 45 + Math.sin(t * 6) * 5, 4, 10); ctx.fillRect(x + 4, y + 45 + Math.sin(t * 6) * 5, 4, 10);
+        }
+
+        function drawEagle(ctx, x, y, t) {
+            const flap = Math.sin(t * 7) * 20;
+            ctx.fillStyle = '#000';
+            // Left wing
+            ctx.beginPath();
+            ctx.moveTo(x, y); ctx.quadraticCurveTo(x - 60, y - 40 + flap, x - 100, y - 10 + flap);
+            ctx.quadraticCurveTo(x - 70, y + 5, x, y + 12); ctx.closePath(); ctx.fill();
+            // Right wing
+            ctx.beginPath();
+            ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 60, y - 40 + flap, x + 100, y - 10 + flap);
+            ctx.quadraticCurveTo(x + 70, y + 5, x, y + 12); ctx.closePath(); ctx.fill();
+            // Wing color
+            ctx.fillStyle = '#5d4037';
+            ctx.beginPath();
+            ctx.moveTo(x, y + 2); ctx.quadraticCurveTo(x - 55, y - 35 + flap, x - 95, y - 8 + flap);
+            ctx.quadraticCurveTo(x - 65, y + 6, x, y + 10); ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x, y + 2); ctx.quadraticCurveTo(x + 55, y - 35 + flap, x + 95, y - 8 + flap);
+            ctx.quadraticCurveTo(x + 65, y + 6, x, y + 10); ctx.closePath(); ctx.fill();
+            // Body + head
+            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x, y + 5, 15, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#efebe9'; ctx.beginPath(); ctx.arc(x, y + 5, 13, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#3e2723'; ctx.beginPath(); ctx.arc(x, y - 3, 10, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#efebe9'; ctx.beginPath(); ctx.arc(x, y - 5, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x + 2, y - 6, 2, 0, Math.PI * 2); ctx.fill();
+            // Beak
+            ctx.fillStyle = '#f9a825';
+            ctx.beginPath(); ctx.moveTo(x + 5, y - 4); ctx.lineTo(x + 18, y - 3); ctx.lineTo(x + 5, y); ctx.closePath(); ctx.fill();
+            // Talons
+            ctx.strokeStyle = '#795548'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(x - 5, y + 18); ctx.lineTo(x - 12, y + 42); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x + 5, y + 18); ctx.lineTo(x + 12, y + 42); ctx.stroke();
+            ctx.fillStyle = '#4e342e';
+            ctx.fillRect(x - 18, y + 40, 9, 5); ctx.fillRect(x + 8, y + 40, 9, 5);
+        }
+
+        // ============================================================
+        //  SOUND ENGINE
+        // ============================================================
+        class SFX {
+            constructor() { this.ac = null }
+            init() { if (!this.ac) this.ac = new (window.AudioContext || window.webkitAudioContext)() }
+            _t(type, f, d, v = .15) {
+                if (!this.ac) return;
+                const o = this.ac.createOscillator(), g = this.ac.createGain();
+                o.type = type; o.frequency.value = f;
+                g.gain.setValueAtTime(v, this.ac.currentTime);
+                g.gain.exponentialRampToValueAtTime(.001, this.ac.currentTime + d);
+                o.connect(g); g.connect(this.ac.destination); o.start(); o.stop(this.ac.currentTime + d);
+            }
+            warn() { for (let i = 0; i < 3; i++)setTimeout(() => this._t('square', 600, .15, .12), i * 150) }
+            wave() {
+                if (!this.ac) return; const d = 2, sr = this.ac.sampleRate, n = sr * d;
+                const b = this.ac.createBuffer(1, n, sr), ch = b.getChannelData(0);
+                for (let i = 0; i < n; i++)ch[i] = Math.random() * 2 - 1;
+                const s = this.ac.createBufferSource(); s.buffer = b;
+                const f = this.ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500;
+                const g = this.ac.createGain(); const t = this.ac.currentTime;
+                g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.4, t + .2);
+                g.gain.linearRampToValueAtTime(0, t + d);
+                s.connect(f); f.connect(g); g.connect(this.ac.destination); s.start();
+            }
+            safe() { this._t('sine', 784, .2, .15); setTimeout(() => this._t('sine', 1047, .2, .12), 100) }
+            roar() {
+                if (!this.ac) return; const o = this.ac.createOscillator(), g = this.ac.createGain();
+                o.type = 'sawtooth'; const t = this.ac.currentTime;
+                o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(30, t + 1.2);
+                g.gain.setValueAtTime(.25, t); g.gain.exponentialRampToValueAtTime(.001, t + 1.5);
+                o.connect(g); g.connect(this.ac.destination); o.start(); o.stop(t + 1.5);
+            }
+            count() { this._t('square', 440, .1, .15) }
+            go() { this._t('square', 880, .4, .2) }
+        }
+        const sfx = new SFX();
+
+        // ============================================================
+        //  UTILS
+        // ============================================================
+        const r = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+        const rF = (a, b) => Math.random() * (b - a) + a;
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = r(0, i);[a[i], a[j]] = [a[j], a[i]] } return a };
+
+        // ============================================================
+        //  CHARACTER DRAWING (Expert 16x24)
+        // ============================================================
+        function drawChar(ctx, x, y, gender, idx, scale, anim = 0) {
+            const s = gender === 'M' ? MALE_MASTER : FEMALE_MASTER;
+            const pals = gender === 'M' ? M_PALS_HD : F_PALS_HD;
+            const pal = pals[idx % pals.length];
+            const sk = '#FDDCB1', sk_s = '#E0B58E';
+            const bob = Math.sin(anim * 4) * 2.5;
+            const ox = x - SPRITE_W * scale / 2, oy = y - SPRITE_H * scale + bob;
+
+            for (let row = 0; row < SPRITE_H; row++) {
+                for (let col = 0; col < SPRITE_W; col++) {
+                    const v = s[row][col]; if (!v) continue;
+                    let c;
+                    switch (v) {
+                        case 1: c = pal.h1; break; case 2: c = pal.h2; break;
+                        case 3: c = sk; break; case 4: c = sk_s; break;
+                        case 5: c = pal.s1; break; case 6: c = pal.s2; break;
+                        case 7: c = pal.p; break; case 8: c = pal.f; break;
+                        case 9: c = '#000'; break; default: c = '#fff'
+                    }
+                    ctx.fillStyle = c;
+                    ctx.fillRect(ox + col * scale, oy + row * scale, scale, scale);
+                }
+            }
+        }
+
+        // ============================================================
+        //  GAME ENGINE v2.4
+        // ============================================================
+        class Game {
+            constructor() {
+                this.cv = document.getElementById('canvas');
+                this.ctx = this.cv.getContext('2d');
+                this.bg = new Image(); this.bg.src = 'bg.png';
+                this.players = []; this.safe = [];
+                this.wave = { active: false, x: 0, targets: [], frame: 0, animT: 0 };
+                this.activeEvents = [];
+                this.state = 'LOBBY';
+                this.targetDuration = 30; this.gameTime = 0;
+                this.waveTimer = 0; this.eventTimer = 0;
+                this.shake = { x: 0, y: 0, t: 0 };
+                this.ocean = 0;
+                this._lt = 0;
+                this.winWidth = window.innerWidth;
+                this.winHeight = window.innerHeight;
+                window.addEventListener('resize', () => this.resize());
+                this.resize();
+            }
+
+            resize() {
+                this.winWidth = window.innerWidth; this.winHeight = window.innerHeight;
+                this.cv.width = this.winWidth; this.cv.height = this.winHeight;
+                this.ctx.imageSmoothingEnabled = false;
+            }
+
+            start(players, dur) {
+                sfx.init();
+                this.targetDuration = dur; this.gameTime = 0;
+                this.chars = players.map(p => ({
+                    ...p,
+                    x: 0, y: 0, hx: 0, hy: 0, state: 'beach', anim: rF(0, 10), shield: 0,
+                    flyX: 0, flyY: 0, sweepProg: 0, sweepTX: 0, sweepTY: 0, safeT: 0
+                }));
+                const pts = this._layout(this.chars.length);
+                this.chars.forEach((c, i) => { c.hx = c.x = pts[i].x; c.hy = c.y = pts[i].y });
+
+                this.activeEvents = []; this.safe = [];
+                this.state = 'COUNTDOWN'; this.cd = 3; this.cdT = 0;
+                this.waveTimer = 2.5; this.eventTimer = rF(3, 6);
+                this._show('game-screen');
+                this._lt = performance.now();
+                this._loop();
+            }
+
+            _layout(n) {
+                const pts = [];
+                const top = this.winHeight * 0.4, bot = this.winHeight * 0.8;
+                const left = this.winWidth * 0.1, right = this.winWidth * 0.5;
+                const rows = n < 5 ? 2 : n < 10 ? 3 : 4;
+                const per = Math.ceil(n / rows);
+                let k = 0;
+                for (let i = 0; i < rows && k < n; i++) {
+                    const cy = top + (bot - top) * (i / rows);
+                    for (let j = 0; j < per && k < n; j++) {
+                        const cx = left + (right - left) * (j / per) + (i % 2 ? 30 : 0);
+                        pts.push({ x: cx + rF(-20, 20), y: cy + rF(-15, 15) });
+                        k++;
+                    }
+                }
+                return pts;
+            }
+
+            _show(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+            }
+
+            update(dt) {
+                this.ocean += dt * 15;
+                if (this.shake.t > 0) { this.shake.t -= dt; this.shake.x = rF(-12, 12) * this.shake.t; this.shake.y = rF(-12, 12) * this.shake.t }
+                else { this.shake.x = this.shake.y = 0 }
+
+                this.chars.forEach(c => {
+                    c.anim += dt;
+                    if (c.shield > 0) c.shield -= dt;
+                    if (c.state === 'swept') {
+                        c.sweepProg += dt * 0.8;
+                        c.x = lerp(c.hx, c.sweepTX, Math.min(1, c.sweepProg));
+                        c.y = lerp(c.hy, c.sweepTY, Math.min(1, c.sweepProg));
+                        if (c.sweepProg >= 1) { c.state = 'safe'; c.safeT = 0 }
+                    }
+                    if (c.state === 'safe') c.safeT += dt;
+                });
+
+                switch (this.state) {
+                    case 'COUNTDOWN':
+                        this.cdT += dt;
+                        if (this.cdT >= 1) { this.cdT = 0; this.cd--; if (this.cd > 0) sfx.count(); else { sfx.go(); this.state = 'PLAYING' } }
+                        break;
+                    case 'PLAYING':
+                        this.gameTime += dt; this.waveTimer -= dt; this.eventTimer -= dt;
+
+                        // TERMINATION: Strict time limit or last survivor
+                        if (this.gameTime >= this.targetDuration || this.chars.filter(c => c.state === 'beach').length <= 1) {
+                            this._checkEnd();
+                        }
+
+                        if (this.waveTimer <= 0) { this._waveWarn(); this.waveTimer = rF(0.5, 3) }
+                        if (this.eventTimer <= 0 && this.chars.filter(c => c.state === 'beach').length > 2) {
+                            this._triggerEvent();
+                            this.eventTimer = rF(2, 5); // Constant threat
+                        }
+                        break;
+                    case 'WAVE_WARN':
+                        this.waveWarnT -= dt;
+                        if (this.waveWarnT <= 0) this._waveHit();
+                        break;
+                    case 'WAVE_HIT':
+                        this.wave.x -= dt * (this.winWidth * 0.8); // Fast wave from right
+                        this.wave.animT += dt * 10;
+                        this.wave.frame = Math.floor(this.wave.animT) % 4;
+
+                        this.wave.targets.forEach(c => {
+                            if (c.state === 'beach' && !c.shield && this.wave.x <= c.hx + 100) {
+                                c.state = 'swept'; c.sweepProg = 0;
+                                c.sweepTX = c.hx - rF(200, 400); c.sweepTY = rF(this.winHeight * 0.4, this.winHeight * 0.6);
+                                sfx.safe(); this.safe.push(c);
+                            }
+                        });
+                        if (this.wave.x < -200) { this.state = 'PLAYING'; this.wave.active = false }
+                        break;
+                }
+
+                this.activeEvents = this.activeEvents.filter(e => !e.update(dt));
+                this._updateHUD();
+            }
+
+            _waveWarn() { this.state = 'WAVE_WARN'; this.waveWarnT = 0.8; sfx.warn(); this.shake.t = 0.5 }
+
+            _waveHit() {
+                const beach = this.chars.filter(c => c.state === 'beach' && !c.shield);
+                if (beach.length <= 1) { this.state = 'PLAYING'; return }
+
+                // Sweep based on progress
+                const prog = this.gameTime / this.targetDuration;
+                const ideal = Math.max(1, Math.round(this.chars.length * (1 - prog)));
+                let sweep = Math.max(1, beach.length - ideal + r(0, 1));
+                sweep = Math.min(sweep, beach.length - 1, 5);
+
+                this.wave.targets = shuffle([...beach]).slice(0, sweep);
+                this.wave.x = this.winWidth; this.wave.active = true; this.wave.animT = 0;
+                this.state = 'WAVE_HIT';
+                sfx.wave(); this.shake.t = 0.7;
+            }
+
+            _triggerEvent() {
+                const types = Object.keys(FLYERS);
+                const type = types[r(0, types.length - 1)];
+                const beach = this.chars.filter(c => c.state === 'beach' && !c.shield);
+                if (beach.length < 2) return;
+                const t = beach[r(0, beach.length - 1)];
+                this.activeEvents.push(new FlyingEvent(type, t, this.winWidth, this.winHeight));
+                sfx.roar();
+            }
+
+            _updateHUD() {
+                const t = document.getElementById('timer-txt');
+                const s = Math.floor(this.gameTime);
+                t.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} / ${this.targetDuration}s`;
+
+                const l = document.getElementById('sv-list'); l.innerHTML = '';
+                this.chars.filter(c => c.state === 'beach').forEach(c => {
+                    const d = document.createElement('div'); d.className = 'sv-item';
+                    const cv = document.createElement('canvas'); cv.width = 16; cv.height = 24;
+                    d.append(cv, c.name); l.append(d);
+                    drawChar(cv.getContext('2d'), 8, 23, c.gender, c.charIdx, 1, 0);
+                });
+            }
+
+            _checkEnd() {
+                const s = this.chars.filter(c => c.state === 'beach');
+                if (this.gameTime >= this.targetDuration || s.length <= 1) {
+                    this.state = 'RESULT'; this.resultChar = s[r(0, s.length - 1)] || null;
+                    sfx.count(); setTimeout(() => this._showResult(), 2000);
+                    return true;
+                } return false;
+            }
+
+            _showResult() {
+                this._show('result');
+                const r = document.getElementById('result');
+                const nm = this.resultChar ? this.resultChar.name : '다들 수고하셨습니다!';
+                r.innerHTML = `
+      <h2>🌊 RESULT 🌊</h2>
+      <div class="loser-box">
+        <div style="font-size:14px;color:var(--gold);margin-bottom:15px">오늘의 커피 요정 (축하!)</div>
+        <canvas id="rc" width="160" height="240"></canvas>
+        <div class="loser-name">${nm}</div>
+        <div class="winner-sub">"잘 마실게요!", "나만 아니면 돼!!!", "ㅋㅋㅋ!"</div>
+      </div>
+      <button class="btn btn-gold" onclick="location.reload()">🔄 대기실로</button>`;
+                if (this.resultChar) {
+                    drawChar(document.getElementById('rc').getContext('2d'), 80, 230, this.resultChar.gender, this.resultChar.charIdx, 10);
+                }
+            }
+
+            render() {
+                const ctx = this.ctx; ctx.save(); ctx.translate(this.shake.x, this.shake.y);
+
+                // BG
+                const bS = Math.max(this.winWidth / 1280, this.winHeight / 720);
+                const bW = 1280 * bS, bH = 720 * bS;
+                ctx.drawImage(this.bg, (this.winWidth - bW) / 2, (this.winHeight - bH) / 2, bW, bH);
+
+                // Characters
+                const sorted = [...this.chars].sort((a, b) => a.y - b.y);
+                sorted.forEach(c => {
+                    if (c.state === 'safe' && c.safeT >= 2) return;
+                    if (c.state === 'safe') ctx.globalAlpha = 1 - c.safeT / 2;
+                    const x = c.state === 'flying' ? c.flyX : c.x;
+                    const y = c.state === 'flying' ? c.flyY : c.y;
+                    drawChar(ctx, x, y, c.gender, c.charIdx, 2.5, c.anim);
+
+                    if (c.state === 'beach') {
+                        ctx.font = '12px "Press Start 2P"';
+                        ctx.fillStyle = 'rgba(0,0,0,0.72)';
+                        const m = ctx.measureText(c.name); const w = m.width + 24;
+                        ctx.fillRect(x - w / 2, y - 75, w, 24);
+                        ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+                        ctx.fillText(c.name, x, y - 58);
+                    }
+                    ctx.globalAlpha = 1;
+                });
+
+                // Wave: pure canvas effect (right → left sweep)
+                if (this.wave.active) {
+                    const wx = this.wave.x;
+                    const wT = this.wave.animT;
+                    const W = this.winWidth, H = this.winHeight;
+
+                    // ---- Water body (right of wave front) ----
+                    const waterGrad = ctx.createLinearGradient(wx - 40, 0, wx + 300, 0);
+                    waterGrad.addColorStop(0, 'rgba(255,255,255,0)');
+                    waterGrad.addColorStop(0.04, 'rgba(255,255,255,0.4)');
+                    waterGrad.addColorStop(0.1, 'rgba(100,200,240,0.4)');
+                    waterGrad.addColorStop(0.35, 'rgba(30,140,220,0.4)');
+                    waterGrad.addColorStop(1, 'rgba(15,90,180,0.4)');
+                    ctx.fillStyle = waterGrad;
+                    ctx.fillRect(wx - 40, 0, W - wx + 40, H);
+
+                    // ---- Horizontal foam stripes (water surface lines) ----
+                    ctx.save();
+                    ctx.globalAlpha = 0.45;
+                    for (let row = 0; row < 10; row++) {
+                        const fy = H * (row / 10) + Math.sin(wT * 2 + row) * 12;
+                        const lineGrad = ctx.createLinearGradient(wx, fy, W, fy);
+                        lineGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+                        lineGrad.addColorStop(0.4, 'rgba(200,235,255,0.4)');
+                        lineGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                        ctx.fillStyle = lineGrad;
+                        const lh = 3 + Math.sin(wT * 3 + row * 0.7) * 2;
+                        ctx.fillRect(wx, fy, W - wx, lh);
+                    }
+                    ctx.restore();
+
+                    // ---- Foam bubbles ----
+                    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                    for (let i = 0; i < 14; i++) {
+                        const bx = wx + 30 + Math.sin(wT * 3.5 + i * 1.1) * 40 + (i % 3) * 20;
+                        const by = H * (i / 14) + Math.cos(wT * 4 + i * 0.9) * 22;
+                        const br = 5 + Math.abs(Math.sin(wT * 5 + i)) * 7;
+                        ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+                    }
+
+                    // ---- Animated crest edge (wiggly white line) ----
+                    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+                    ctx.lineWidth = 10;
+                    ctx.beginPath();
+                    for (let i = 0; i <= H; i += 4) {
+                        const cx2 = wx + Math.sin(wT * 7 + i * 0.02) * 18 + Math.sin(wT * 13 + i * 0.007) * 7;
+                        if (i === 0) ctx.moveTo(cx2, i); else ctx.lineTo(cx2, i);
+                    }
+                    ctx.stroke();
+                    // Thin inner crest
+                    ctx.strokeStyle = 'rgba(200,240,255,0.6)';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    for (let i = 0; i <= H; i += 4) {
+                        const cx2 = wx + 22 + Math.sin(wT * 6 + i * 0.018) * 10;
+                        if (i === 0) ctx.moveTo(cx2, i); else ctx.lineTo(cx2, i);
+                    }
+                    ctx.stroke();
+                }
+
+                // Events
+                this.activeEvents.forEach(e => this._drawFlyer(ctx, e));
+
+                // Countdown UI
+                if (this.state === 'COUNTDOWN') {
+                    ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, this.winWidth, this.winHeight);
+                    ctx.fillStyle = '#f7c948'; ctx.font = '100px "Press Start 2P"';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText(this.cd > 0 ? this.cd : 'GO!', this.winWidth / 2, this.winHeight / 2);
+                }
+                ctx.restore();
+            }
+
+            _drawFlyer(ctx, f) {
+                const cx = f.x, cy = f.y;
+                // Draw unique pixel-art per type
+                switch (f.type) {
+                    case 'DRAGON': drawDragon(ctx, cx, cy, f.t); break;
+                    case 'PLANE': drawPlane(ctx, cx, cy, f.t); break;
+                    case 'GLIDER': drawGlider(ctx, cx, cy, f.t); break;
+                    case 'DRONE': drawDrone(ctx, cx, cy, f.t); break;
+                    case 'EAGLE': drawEagle(ctx, cx, cy, f.t); break;
+                }
+                // Capture flash label during hold
+                if (f.phase === 'hold' && f.t < 0.7) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(cx - 35, cy - f.labelY - 22, 70, 20);
+                    ctx.fillStyle = '#ff5722'; ctx.font = 'bold 11px "Press Start 2P"'; ctx.textAlign = 'center';
+                    ctx.fillText(f.info.captureLabel, cx, cy - f.labelY - 7);
+                }
+                // Rope/tether to target when in hold/exit
+                if ((f.phase === 'hold' || f.phase === 'exit') && f.target.state === 'flying') {
+                    ctx.strokeStyle = 'rgba(161,136,127,0.9)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+                    ctx.beginPath(); ctx.moveTo(cx, cy + 20); ctx.lineTo(f.target.flyX, f.target.flyY - 20); ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            _loop() {
+                if (this.state === 'LOBBY') return;
+                const now = performance.now(); const dt = Math.min(.05, (now - this._lt) / 1000); this._lt = now;
+                this.update(dt); this.render();
+                if (this.state !== 'RESULT') requestAnimationFrame(() => this._loop());
+            }
+        }
+
+        class FlyingEvent {
+            constructor(type, target, vw, vh) {
+                this.type = type;
+                this.info = FLYERS[type];
+                this.target = target;
+                // DON'T set target.state yet — keep char visible on beach during approach
+                this.target.shield = 100; // prevents wave from sweeping them while targeted
+                this.vw = vw; this.vh = vh;
+                this.x = -200; this.y = rF(vh * 0.15, vh * 0.45);
+                this.phase = 'enter'; this.t = 0;
+                this.holdT = rF(1.2, 2.5);
+                this.labelY = 0;
+                this.altOff = type === 'DRONE' ? -80 : type === 'EAGLE' ? -50 : type === 'PLANE' ? -30 : -70;
+                this.enterSpd = type === 'PLANE' ? 600 : type === 'GLIDER' ? 250 : type === 'EAGLE' ? 500 : 380;
+                this.exitDX = this.info.exitDX; this.exitDY = this.info.exitDY;
+            }
+            update(dt) {
+                this.t += dt;
+                const tx = this.target.hx, ty = this.target.hy + this.altOff;
+                const dangOff = this.type === 'DRONE' ? 55 : this.type === 'EAGLE' ? 50 : this.type === 'PLANE' ? 65 : 60;
+
+                if (this.phase === 'enter') {
+                    // Flyer approaches — character stays on beach, but shadow/indicator shows
+                    this.x += dt * this.enterSpd;
+                    this.y += (ty - this.y) * dt * 4;
+                    if (this.x >= tx - 20) {
+                        // Flyer has arrived! Now pick up the character
+                        this.target.state = 'flying';
+                        this.phase = 'hold'; this.t = 0;
+                    }
+                } else if (this.phase === 'hold') {
+                    if (this.type === 'DRONE') {
+                        this.x = tx + Math.sin(this.t * 5) * 10;
+                        this.y = ty + Math.cos(this.t * 6) * 6;
+                    } else if (this.type === 'EAGLE') {
+                        this.x = tx + Math.sin(this.t * 4) * 15;
+                        this.y = ty - Math.abs(Math.sin(this.t * 5)) * 12;
+                    } else if (this.type === 'GLIDER') {
+                        this.x = tx + Math.sin(this.t * 2.5) * 25;
+                        this.y = ty + Math.sin(this.t * 3) * 8;
+                    } else {
+                        this.x = tx + Math.sin(this.t * 3.5) * 18;
+                        this.y = ty + Math.cos(this.t * 4) * 10;
+                    }
+                    this.labelY = Math.abs(Math.sin(this.t * 8)) * 15 + 60;
+                    if (this.t > this.holdT) { this.phase = 'exit'; this.t = 0; }
+                } else if (this.phase === 'exit') {
+                    this.x += dt * this.exitDX;
+                    this.y += dt * this.exitDY;
+                    if (this.x > this.vw + 300 || this.y < -200) {
+                        this.target.state = 'beach'; this.target.shield = 0; return true;
+                    }
+                }
+
+                // During hold/exit: character is being carried
+                if (this.phase !== 'enter') {
+                    this.target.flyX = this.x + Math.sin(this.t * 5) * 8;
+                    this.target.flyY = this.y + dangOff;
+                }
+                return false;
+            }
+        }
+
+        // ============================================================
+        //  LOBBY LOGIC
+        // ============================================================
+        const game = new Game();
+        let players = JSON.parse(localStorage.getItem('tw_players_v24') || '[]');
+        let sG = 'M', sC = 0;
+
+        function renderLobby() {
+            const p = document.getElementById('plist'); p.innerHTML = '';
+            players.forEach((x, i) => {
+                const d = document.createElement('div'); d.className = 'ptag';
+                const c = document.createElement('canvas'); c.width = 32; c.height = 48;
+                d.append(c, x.name);
+                const del = document.createElement('span'); del.className = 'x'; del.textContent = '✕';
+                del.onclick = () => { players.splice(i, 1); save(); renderLobby() };
+                d.append(del); p.append(d);
+                drawChar(c.getContext('2d'), 16, 46, x.gender, x.charIdx, 2, 0);
+            });
+            document.getElementById('p-cnt').textContent = players.length;
+            document.getElementById('btn-start').disabled = players.length < 2;
+        }
+
+        function renderGrid() {
+            const g = document.getElementById('char-grid'); g.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const cell = document.createElement('div'); cell.className = 'char-cell' + (sC === i ? ' sel' : '');
+                const c = document.createElement('canvas'); c.width = 80; c.height = 120;
+                cell.append(c); cell.onclick = () => { sC = i; renderGrid() };
+                g.append(cell);
+                drawChar(c.getContext('2d'), 40, 110, sG, i, 4.4);
+            }
+        }
+
+        function save() { localStorage.setItem('tw_players_v24', JSON.stringify(players)) }
+
+        document.querySelectorAll('.g-btn').forEach(b => {
+            b.onclick = () => { sG = b.dataset.g; document.querySelectorAll('.g-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); renderGrid() }
+        });
+
+        document.getElementById('btn-add').onclick = () => {
+            const n = document.getElementById('name-input').value.trim();
+            if (!n || players.length >= 20 || players.find(x => x.name === n)) return;
+            players.push({ name: n, gender: sG, charIdx: sC }); save(); renderLobby();
+            document.getElementById('name-input').value = '';
+        }
+
+        document.getElementById('btn-start').onclick = () => {
+            game.start(players, parseInt(document.getElementById('time-input').value));
+        }
+
+        function addSamples() {
+            ['민철', '서연', '도윤', '수빈', '지우', '현우', '예은', '민수', '지혜', '성준'].forEach(n => {
+                if (players.length < 20 && !players.find(x => x.name === n)) players.push({ name: n, gender: Math.random() > 0.5 ? 'M' : 'F', charIdx: r(0, 4) })
+            }); save(); renderLobby();
+        }
+        function clearAll() { players = []; save(); renderLobby() }
+
+        renderGrid(); renderLobby();
+    </script>
+</body>
+
+</html>
