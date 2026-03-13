@@ -646,6 +646,12 @@
             font-size: 10px;
             color: #ccc;
             pointer-events: none;
+            z-index: 50;
+            transition: opacity 0.8s ease;
+        }
+
+        .cam-hint.hidden {
+            opacity: 0;
         }
     </style>
 </head>
@@ -1142,10 +1148,13 @@
                     this.cam.x = (1280 - this.winWidth / this.cam.zoom) / 2;
                     this.cam.y = 0;
                 } else {
-                    // Mobile: Maximize screen usage but prioritize height for 20:9
-                    this.cam.zoom = Math.max(this.winWidth / this.MAP_W, this.winHeight / this.MAP_H);
+                    // Mobile: ALWAYS use height-fit to prevent bottom clipping on 20:9, 21:9 etc.
+                    // Width overflow is handled by horizontal panning
+                    const hzoom = this.winHeight / this.MAP_H; // Height-first zoom
+                    const wzoom = this.winWidth / this.MAP_W;  // Width-first zoom
+                    this.cam.zoom = Math.max(hzoom, wzoom);   // Fill whichever needs more
                     this.cam.x = (this.MAP_W - this.winWidth / this.cam.zoom) / 2;
-                    this.cam.y = (this.MAP_H - this.winHeight / this.cam.zoom) / 2;
+                    this.cam.y = 0; // Always align to top, no bottom gap
                 }
                 this._clampCam();
             }
@@ -1190,6 +1199,11 @@
                 this.state = 'COUNTDOWN'; this.cd = 3; this.cdT = 0;
                 this.waveTimer = 2.5; this.eventTimer = rF(3, 6);
                 this._show('game-screen');
+
+                // Auto-hide cam-hint after 3 seconds
+                const h = document.querySelector('.cam-hint');
+                if (h) { h.classList.remove('hidden'); setTimeout(() => h.classList.add('hidden'), 3000); }
+
                 this._lt = performance.now();
                 this._loop();
             }
