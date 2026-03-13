@@ -1111,7 +1111,7 @@
                 if (this.winWidth < 600 && isPortrait) {
                     this.charScale = 1.3;
                 } else if (isMobile || this.winHeight < 600) {
-                    this.charScale = 0.9; // Reverted to 0.9 as requested
+                    this.charScale = 1.2; // Increased to 1.2 as requested
                 } else {
                     this.charScale = 2.5;
                 }
@@ -1288,22 +1288,28 @@
             _showResult() {
                 this._show('result');
                 const r = document.getElementById('result');
+                const nm = this.resultChar ? this.resultChar.name : '다들 수고하셨습니다!';
                 const isMobile = this.winWidth < 1000 && this.winHeight < 600;
-                const resScale = isMobile ? 2.0 : (this.winWidth < 600 ? 3.2 : 4.5);
-                const cvH = (isMobile || this.winWidth < 600) ? 280 : 400;
+                const resScale = isMobile ? 2.5 : (this.winWidth < 600 ? 3.2 : 4.5);
+                const cvH = (isMobile || this.winWidth < 600) ? 240 : 400;
 
                 r.innerHTML = `
-      <h2>🌊 RESULT 🌊</h2>
-      <div class="loser-box">
-        <div style="font-size:20px;color:var(--gold);margin-bottom:18px">오늘의 커피 요정 (축하!)</div>
-        <canvas id="rc" width="320" height="${cvH}"></canvas>
-        <div class="loser-name" style="font-size:48px;color:#fff">${nm}</div>
+      <h2 style="margin-bottom:10px">🌊 RESULT 🌊</h2>
+      <div class="loser-box" style="padding: 20px 40px; gap: 15px">
+        <div style="font-size:18px;color:var(--gold)">오늘의 커피 요정 (축하!)</div>
+        <canvas id="rc" width="300" height="${cvH}"></canvas>
+        <div class="loser-name" style="font-size:clamp(32px, 8vw, 64px);color:#fff">${nm}</div>
         <div class="winner-sub">"잘 마실게요!", "나만 아니면 돼!!!", "ㅋㅋㅋ!"</div>
       </div>
-      <button class="btn btn-gold" onclick="location.reload()">🔄 대기실로</button>`;
-                if (this.resultChar) {
-                    drawChar(document.getElementById('rc').getContext('2d'), 160, cvH - 20, '', this.resultChar.charIdx, resScale);
-                }
+      <button class="btn btn-gold" onclick="location.reload()" style="margin-top:15px">🔄 대기실로</button>`;
+
+                // Use requestAnimationFrame to ensure the canvas is ready in the DOM
+                requestAnimationFrame(() => {
+                    const canvas = document.getElementById('rc');
+                    if (canvas && this.resultChar) {
+                        drawChar(canvas.getContext('2d'), 150, cvH - 20, '', this.resultChar.charIdx, resScale);
+                    }
+                });
             }
 
             render() {
