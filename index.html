@@ -534,6 +534,38 @@
                 font-size: 28px
             }
         }
+
+        /* ========== MOBILE RESPONSIVE ========== */
+        @media (max-width: 600px) {
+            #lobby {
+                padding: 15px;
+            }
+
+            .lobby-wrap {
+                flex-direction: column;
+            }
+
+            .lobby-l,
+            .lobby-r {
+                width: 100%;
+            }
+
+            .char-grid {
+                grid-template-columns: repeat(3, 1fr);
+                max-height: 240px;
+            }
+
+            .ptag {
+                min-width: 100%;
+                font-size: 13px;
+                height: 54px;
+            }
+
+            .btn-gold {
+                width: 100%;
+                padding: 12px 20px;
+            }
+        }
     </style>
 </head>
 
@@ -929,6 +961,8 @@
                 this.winWidth = window.innerWidth; this.winHeight = window.innerHeight;
                 this.cv.width = this.winWidth; this.cv.height = this.winHeight;
                 this.ctx.imageSmoothingEnabled = false;
+                // Responsive Scaling
+                this.charScale = this.winWidth < 600 ? 1.5 : 2.5;
             }
 
             start(players, dur) {
@@ -937,8 +971,8 @@
 
                 // --- Extreme Scatter Logic (Wide & Non-overlapping) ---
                 const used = [];
-                const minDist = 140; // Wide distance to prevent visual overlap
-                const winW = window.innerWidth, winH = window.innerHeight;
+                const minDist = 55 * this.charScale; // Responsive distance based on scale
+                const winW = this.winWidth, winH = this.winHeight;
 
                 function findPos() {
                     for (let i = 0; i < 200; i++) {
@@ -1037,7 +1071,7 @@
                         break;
                 }
 
-                this.activeEvents = this.activeEvents.filter(e => !e.update(dt));
+                this.activeEvents = this.activeEvents.filter(e => !e.update(dt, this.charScale));
                 this._updateHUD();
             }
 
@@ -1096,17 +1130,20 @@
                 this._show('result');
                 const r = document.getElementById('result');
                 const nm = this.resultChar ? this.resultChar.name : '다들 수고하셨습니다!';
+                const resScale = this.winWidth < 600 ? 3.2 : 4.5;
+                const cvH = this.winWidth < 600 ? 300 : 400;
+
                 r.innerHTML = `
       <h2>🌊 RESULT 🌊</h2>
       <div class="loser-box">
         <div style="font-size:20px;color:var(--gold);margin-bottom:18px">오늘의 커피 요정 (축하!)</div>
-        <canvas id="rc" width="320" height="400"></canvas>
+        <canvas id="rc" width="320" height="${cvH}"></canvas>
         <div class="loser-name" style="font-size:48px;color:#fff">${nm}</div>
         <div class="winner-sub">"잘 마실게요!", "나만 아니면 돼!!!", "ㅋㅋㅋ!"</div>
       </div>
       <button class="btn btn-gold" onclick="location.reload()">🔄 대기실로</button>`;
                 if (this.resultChar) {
-                    drawChar(document.getElementById('rc').getContext('2d'), 160, 380, '', this.resultChar.charIdx, 4.5);
+                    drawChar(document.getElementById('rc').getContext('2d'), 160, cvH - 20, '', this.resultChar.charIdx, resScale);
                 }
             }
 
@@ -1120,15 +1157,19 @@
 
                 // Characters
                 const sorted = [...this.chars].sort((a, b) => a.y - b.y);
+                const charH = 80 * this.charScale;
+                const flyOff = charH * 0.8;
+                const fontSize = this.winWidth < 600 ? '13px' : '16px';
+
                 sorted.forEach(c => {
                     if (c.state === 'safe' && c.safeT >= 2) return;
                     if (c.state === 'safe') ctx.globalAlpha = 1 - c.safeT / 2;
                     const x = c.state === 'flying' ? c.flyX : c.x;
-                    const y = c.state === 'flying' ? c.flyY + 160 : c.y; // +160 = grab at head not feet
-                    drawChar(ctx, x, y, '', c.charIdx, 2.5, c.anim);
+                    const y = c.state === 'flying' ? c.flyY + flyOff : c.y;
+                    drawChar(ctx, x, y, '', c.charIdx, this.charScale, c.anim);
 
                     if (c.state === 'beach') {
-                        ctx.font = '16px "Press Start 2P"';
+                        ctx.font = `${fontSize} "Press Start 2P"`;
                         ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
                         ctx.shadowBlur = 4; ctx.shadowColor = '#000';
                         ctx.fillText(c.name, x, y + 25);
@@ -1254,14 +1295,15 @@
                 this.phase = 'enter'; this.t = 0;
                 this.holdT = rF(1.2, 2.5);
                 this.labelY = 0;
-                this.altOff = type === 'DRONE' ? -80 : type === 'EAGLE' ? -50 : type === 'PLANE' ? -30 : -70;
+                const sc = this.target.scale || 1; // Not used directly, using game's charScale for consistency
+                this.altOff = (type === 'DRONE' ? -80 : type === 'EAGLE' ? -50 : type === 'PLANE' ? -30 : -70) * (target.gameScale || 1);
                 this.enterSpd = type === 'PLANE' ? 600 : type === 'GLIDER' ? 250 : type === 'EAGLE' ? 500 : 380;
                 this.exitDX = this.info.exitDX; this.exitDY = this.info.exitDY;
             }
-            update(dt) {
+            update(dt, scale) {
                 this.t += dt;
-                const tx = this.target.hx, ty = this.target.hy + this.altOff;
-                const dangOff = this.type === 'DRONE' ? 55 : this.type === 'EAGLE' ? 50 : this.type === 'PLANE' ? 65 : 60;
+                const tx = this.target.hx, ty = this.target.hy + (this.altOff * (scale / 2.5));
+                const dangOff = (this.type === 'DRONE' ? 55 : this.type === 'EAGLE' ? 50 : this.type === 'PLANE' ? 65 : 60) * (scale / 2.5);
 
                 if (this.phase === 'enter') {
                     // Flyer approaches — character stays on beach, but shadow/indicator shows
