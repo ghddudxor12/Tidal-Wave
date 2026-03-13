@@ -1029,7 +1029,8 @@
             constructor() {
                 this.cv = document.getElementById('canvas');
                 this.ctx = this.cv.getContext('2d');
-                this.bg = new Image(); this.bg.src = 'bg.png';
+                this.MAP_W = 1920; this.MAP_H = 720;
+                this.bg = new Image(); this.bg.src = 'ultrawide_bg.png';
                 this.players = []; this.safe = [];
                 this.wave = { active: false, x: 0, targets: [], frame: 0, animT: 0 };
                 this.activeEvents = [];
@@ -1088,12 +1089,11 @@
 
             _clampCam() {
                 // Keep camera within map bounds roughly
-                const mapW = 1280, mapH = 720;
                 const viewW = this.winWidth / this.cam.zoom;
                 const viewH = this.winHeight / this.cam.zoom;
 
-                this.cam.x = Math.max(0, Math.min(mapW - viewW, this.cam.x));
-                this.cam.y = Math.max(0, Math.min(mapH - viewH, this.cam.y));
+                this.cam.x = Math.max(0, Math.min(this.MAP_W - viewW, this.cam.x));
+                this.cam.y = Math.max(0, Math.min(this.MAP_H - viewH, this.cam.y));
             }
 
             resize() {
@@ -1118,9 +1118,9 @@
 
                 // Initial Cam Setup (Centering/Fill logic)
                 if (this.state === 'LOBBY' || (this.cam.zoom === 1 && this.cam.x === 0)) {
-                    this.cam.zoom = Math.max(this.winWidth / 1280, this.winHeight / 720);
-                    this.cam.x = (1280 - this.winWidth / this.cam.zoom) / 2;
-                    this.cam.y = (720 - this.winHeight / this.cam.zoom) / 2;
+                    this.cam.zoom = Math.max(this.winWidth / this.MAP_W, this.winHeight / this.MAP_H);
+                    this.cam.x = (this.MAP_W - this.winWidth / this.cam.zoom) / 2;
+                    this.cam.y = (this.MAP_H - this.winHeight / this.cam.zoom) / 2;
                     this._clampCam();
                 }
             }
@@ -1132,14 +1132,13 @@
                 // --- Extreme Scatter Logic (Wide & Non-overlapping, Map-Relative) ---
                 const used = [];
                 const minDist = 75 * this.charScale; // Increased distance for better scattering
-                const mapW = 1280, mapH = 720;
 
                 function findPos() {
                     for (let i = 0; i < 300; i++) {
-                        // Wide range across 1280x720 map: 
-                        // x: 100 to 1100 (central beach area)
+                        // Wide range across 1920x720 map: 
+                        // x: 100 to 1700 (extended beach area)
                         // y: 300 to 650 (safe beach area)
-                        const rx = 100 + Math.random() * 1000;
+                        const rx = 100 + Math.random() * 1600;
                         const ry = 300 + Math.random() * 350;
                         if (used.every(p => Math.hypot(p.x - rx, p.y - ry) > minDist)) {
                             const pt = { x: rx, y: ry };
@@ -1147,7 +1146,7 @@
                             return pt;
                         }
                     }
-                    return { x: 200 + Math.random() * 800, y: 400 + Math.random() * 200 };
+                    return { x: 400 + Math.random() * 1000, y: 400 + Math.random() * 200 };
                 }
 
                 this.chars = players.map(p => {
@@ -1217,7 +1216,7 @@
                         if (this.waveWarnT <= 0) this._waveHit();
                         break;
                     case 'WAVE_HIT':
-                        this.wave.x -= dt * (this.winWidth * 0.8); // Fast wave from right
+                        this.wave.x -= dt * 1000; // Fast wave speed (fixed)
                         this.wave.animT += dt * 10;
                         this.wave.frame = Math.floor(this.wave.animT) % 4;
 
@@ -1249,7 +1248,7 @@
                 sweep = Math.min(sweep, beach.length - 1, 5);
 
                 this.wave.targets = shuffle([...beach]).slice(0, sweep);
-                this.wave.x = this.winWidth; this.wave.active = true; this.wave.animT = 0;
+                this.wave.x = 1920; this.wave.active = true; this.wave.animT = 0;
                 this.state = 'WAVE_HIT';
                 sfx.wave(); this.shake.t = 0.7;
             }
@@ -1260,7 +1259,7 @@
                 const beach = this.chars.filter(c => c.state === 'beach' && !c.shield);
                 if (beach.length < 2) return;
                 const t = beach[r(0, beach.length - 1)];
-                this.activeEvents.push(new FlyingEvent(type, t, 1280, 720)); // Use map size
+                this.activeEvents.push(new FlyingEvent(type, t, this.MAP_W, this.MAP_H)); // Use map size
                 sfx.roar();
             }
 
@@ -1321,8 +1320,8 @@
                 ctx.scale(this.cam.zoom, this.cam.zoom);
                 ctx.translate(-this.cam.x + this.shake.x / this.cam.zoom, -this.cam.y + this.shake.y / this.cam.zoom);
 
-                // BG (Draw original map size 1280x720)
-                ctx.drawImage(this.bg, 0, 0, 1280, 720);
+                // BG (Draw original map size 1920x720)
+                ctx.drawImage(this.bg, 0, 0, 1920, 720);
 
                 // Characters
                 const sorted = [...this.chars].sort((a, b) => a.y - b.y);
@@ -1361,20 +1360,20 @@
                     waterGrad.addColorStop(0.35, 'rgba(30,140,220,0.4)');
                     waterGrad.addColorStop(1, 'rgba(15,90,180,0.4)');
                     ctx.fillStyle = waterGrad;
-                    ctx.fillRect(wx - 40, 0, 1320 - wx, 720);
+                    ctx.fillRect(wx - 40, 0, 1960 - wx, 720); // Cover to map right edge
 
                     // ---- Horizontal foam stripes ----
                     ctx.save();
                     ctx.globalAlpha = 0.45;
                     for (let row = 0; row < 10; row++) {
                         const fy = 720 * (row / 10) + Math.sin(wT * 2 + row) * 12;
-                        const lineGrad = ctx.createLinearGradient(wx, fy, 1280, fy);
+                        const lineGrad = ctx.createLinearGradient(wx, fy, 1920, fy);
                         lineGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
                         lineGrad.addColorStop(0.4, 'rgba(200,235,255,0.4)');
                         lineGrad.addColorStop(1, 'rgba(255,255,255,0)');
                         ctx.fillStyle = lineGrad;
                         const lh = 3 + Math.sin(wT * 3 + row * 0.7) * 2;
-                        ctx.fillRect(wx, fy, 1280 - wx, lh);
+                        ctx.fillRect(wx, fy, 1920 - wx, lh);
                     }
                     ctx.restore();
 
