@@ -1111,7 +1111,7 @@
                 if (this.winWidth < 600 && isPortrait) {
                     this.charScale = 1.3;
                 } else if (isMobile || this.winHeight < 600) {
-                    this.charScale = 2.5; // Reverted to 2.5x as requested
+                    this.charScale = 2.0; // Updated to 2.0x as requested
                 } else {
                     this.charScale = 2.5;
                 }
@@ -1129,24 +1129,25 @@
                 sfx.init();
                 this.targetDuration = dur; this.gameTime = 0;
 
-                // --- Extreme Scatter Logic (Wide & Non-overlapping) ---
+                // --- Extreme Scatter Logic (Wide & Non-overlapping, Map-Relative) ---
                 const used = [];
-                const minDist = 55 * this.charScale; // Responsive distance based on scale
-                const winW = this.winWidth, winH = this.winHeight;
+                const minDist = 75 * this.charScale; // Increased distance for better scattering
+                const mapW = 1280, mapH = 720;
 
                 function findPos() {
-                    for (let i = 0; i < 200; i++) {
-                        // Wide range across the beach: 5% to 60% Width, 30% to 80% Height
-                        const rx = (winW * 0.05) + Math.random() * (winW * 0.55);
-                        const ry = (winH * 0.30) + Math.random() * (winH * 0.50);
+                    for (let i = 0; i < 300; i++) {
+                        // Wide range across 1280x720 map: 
+                        // x: 100 to 1100 (central beach area)
+                        // y: 300 to 650 (safe beach area)
+                        const rx = 100 + Math.random() * 1000;
+                        const ry = 300 + Math.random() * 350;
                         if (used.every(p => Math.hypot(p.x - rx, p.y - ry) > minDist)) {
                             const pt = { x: rx, y: ry };
                             used.push(pt);
                             return pt;
                         }
                     }
-                    // Fallback (should rarely hit with 200 attempts)
-                    return { x: 100 + Math.random() * 400, y: 300 + Math.random() * 300 };
+                    return { x: 200 + Math.random() * 800, y: 400 + Math.random() * 200 };
                 }
 
                 this.chars = players.map(p => {
@@ -1259,7 +1260,7 @@
                 const beach = this.chars.filter(c => c.state === 'beach' && !c.shield);
                 if (beach.length < 2) return;
                 const t = beach[r(0, beach.length - 1)];
-                this.activeEvents.push(new FlyingEvent(type, t, this.winWidth, this.winHeight));
+                this.activeEvents.push(new FlyingEvent(type, t, 1280, 720)); // Use map size
                 sfx.roar();
             }
 
@@ -1327,7 +1328,7 @@
                 const sorted = [...this.chars].sort((a, b) => a.y - b.y);
                 const charH = 80 * this.charScale;
                 const flyOff = charH * 0.8;
-                const fontSize = this.winWidth < 600 ? '13px' : '16px';
+                const fontSize = this.winWidth < 600 ? '16px' : '20px'; // Enlarged nametags
 
                 sorted.forEach(c => {
                     if (c.state === 'safe' && c.safeT >= 2) return;
