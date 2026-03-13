@@ -1116,7 +1116,7 @@
 
                 // Strict Environment Split
                 this.env = isTouch ? 'MOBILE' : 'DESKTOP';
-                this.MAP_W = (this.env === 'DESKTOP') ? 1280 : 1600; // 1600 matches 20:9 ratio (3072x1376)
+                this.MAP_W = (this.env === 'DESKTOP') ? 1280 : 1400; // Reduced from 1600 to eliminate mobile scroll
                 this.MAP_H = 720;
 
                 // Background Switch
@@ -1170,10 +1170,10 @@
                 const self = this;
                 function findPos() {
                     for (let i = 0; i < 400; i++) {
-                        // LEFT BEACH ONLY - strictly within sandy area:
-                        // x: 200 to 560 (sand zone, before ocean starts at ~600px in bg.png)
-                        // y: 350 to 650 (beach play zone)
-                        const rx = 200 + Math.random() * 360;
+                        // Spread out more (100 to 700px) to reduce clustering
+                        // x: 100 to 700 (still strictly on the left half of the 1400 map)
+                        // y: 350 to 650
+                        const rx = 100 + Math.random() * 600;
                         const ry = 350 + Math.random() * 300;
                         if (used.every(p => Math.hypot(p.x - rx, p.y - ry) > minDist)) {
                             const pt = { x: rx, y: ry };
@@ -1181,7 +1181,7 @@
                             return pt;
                         }
                     }
-                    return { x: 300 + Math.random() * 150, y: 450 + Math.random() * 100 };
+                    return { x: 300 + Math.random() * 200, y: 450 + Math.random() * 100 };
                 }
 
                 this.chars = players.map(p => {
