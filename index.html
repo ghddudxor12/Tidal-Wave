@@ -704,7 +704,7 @@
                 <div class="hud-top">
                     <div class="timer-box" id="timer-txt">0:00 / 30s</div>
                     <div class="survivor-list-box">
-                        <h3>현황판</h3>
+                        <h3>당첨자 명단</h3>
                         <div id="sv-list"></div>
                     </div>
                 </div>
@@ -1173,8 +1173,8 @@
                         // Matching the red box in the screenshot:
                         // x: 40 to 760 (Left forest/beach side)
                         // y: 60 to 680 (Full height including top trees)
-                        const rx = 40 + Math.random() * 720;
-                        const ry = 60 + Math.random() * 620;
+                        const rx = 40 + Math.random() * 600;
+                        const ry = 140 + Math.random() * 520;
                         if (used.every(p => Math.hypot(p.x - rx, p.y - ry) > minDist)) {
                             const pt = { x: rx, y: ry };
                             used.push(pt);
@@ -1197,7 +1197,14 @@
 
                 this.activeEvents = []; this.safe = [];
                 this.state = 'COUNTDOWN'; this.cd = 3; this.cdT = 0;
-                this.waveTimer = 2.5; this.eventTimer = rF(3, 6);
+
+                // --- Dynamic Pacing ---
+                // Scale wave interval based on total duration and player count
+                // Aim for roughly (count + 2) waves total
+                this.waveInterval = Math.max(2.5, this.targetDuration / (this.chars.length + 1));
+                this.waveTimer = 3.0; // Fixed first wave lead time
+                this.eventTimer = rF(4, 8); // Scaled events
+
                 this._show('game-screen');
 
                 // Auto-hide cam-hint after 3 seconds
@@ -1245,10 +1252,14 @@
                             this._checkEnd();
                         }
 
-                        if (this.waveTimer <= 0) { this._waveWarn(); this.waveTimer = rF(0.5, 3) }
+                        if (this.waveTimer <= 0) {
+                            this._waveWarn();
+                            // Variance: 0.8x to 1.3x of base interval
+                            this.waveTimer = this.waveInterval * rF(0.8, 1.3);
+                        }
                         if (this.eventTimer <= 0 && this.chars.filter(c => c.state === 'beach').length > 2) {
                             this._triggerEvent();
-                            this.eventTimer = rF(2, 5); // Constant threat
+                            this.eventTimer = this.waveInterval * rF(0.7, 1.2); // Sync with waves
                         }
                         break;
                     case 'WAVE_WARN':
@@ -1281,11 +1292,23 @@
                 const beach = this.chars.filter(c => c.state === 'beach' && !c.shield);
                 if (beach.length <= 1) { this.state = 'PLAYING'; return }
 
-                // Sweep based on progress
+                // --- Improved Sweep Logic ---
                 const prog = this.gameTime / this.targetDuration;
+                // Ideal number of survivors at this stage (linear curve)
                 const ideal = Math.max(1, Math.round(this.chars.length * (1 - prog)));
-                let sweep = Math.max(1, beach.length - ideal + r(0, 1));
-                sweep = Math.min(sweep, beach.length - 1, 5);
+
+                // Calculate how many we *need* to sweep to match the curve
+                let need = beach.length - ideal;
+
+                // Randomness: 10% chance of 'Miss' (sweep 0) if time permits
+                // Or slightly more/less than needed
+                let sweep = 0;
+                if (Math.random() > 0.1 || prog > 0.8) {
+                    sweep = Math.max(0, need + r(-1, 0));
+                }
+
+                // Guard: don't sweep too many at once (max 4 on normal waves)
+                sweep = Math.min(sweep, beach.length - 1, 4);
 
                 this.wave.targets = shuffle([...beach]).slice(0, sweep);
                 this.wave.x = this.MAP_W; this.wave.active = true; this.wave.animT = 0;
