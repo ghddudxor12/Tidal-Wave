@@ -1163,25 +1163,25 @@
                 sfx.init();
                 this.targetDuration = dur; this.gameTime = 0;
 
-                // --- Scatter Logic (Left Beach Only) ---
+                // --- Scatter Logic (Full Left-Side Coverage) ---
                 const used = [];
                 const minDist = 55 * this.charScale;
 
                 const self = this;
                 function findPos() {
                     for (let i = 0; i < 400; i++) {
-                        // Spread out more (100 to 700px) to reduce clustering
-                        // x: 100 to 700 (still strictly on the left half of the 1400 map)
-                        // y: 350 to 650
-                        const rx = 100 + Math.random() * 600;
-                        const ry = 350 + Math.random() * 300;
+                        // Wide distribution including top-left (mountain/forest side)
+                        // x: 80 to 700 (Left half of the screen)
+                        // y: 120 to 680 (Full height coverage)
+                        const rx = 80 + Math.random() * 620;
+                        const ry = 120 + Math.random() * 560;
                         if (used.every(p => Math.hypot(p.x - rx, p.y - ry) > minDist)) {
                             const pt = { x: rx, y: ry };
                             used.push(pt);
                             return pt;
                         }
                     }
-                    return { x: 300 + Math.random() * 200, y: 450 + Math.random() * 100 };
+                    return { x: 200 + Math.random() * 300, y: 300 + Math.random() * 300 };
                 }
 
                 this.chars = players.map(p => {
