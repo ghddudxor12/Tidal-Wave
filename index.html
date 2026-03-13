@@ -1131,22 +1131,22 @@
 
                 // --- Extreme Scatter Logic (Wide & Non-overlapping, Map-Relative) ---
                 const used = [];
-                const minDist = 75 * this.charScale; // Increased distance for better scattering
+                const minDist = 60 * this.charScale; // Slightly tighter for clustering
 
                 function findPos() {
                     for (let i = 0; i < 300; i++) {
-                        // Wide range across 1920x720 map: 
-                        // x: 100 to 1700 (extended beach area)
-                        // y: 300 to 650 (safe beach area)
-                        const rx = 100 + Math.random() * 1600;
-                        const ry = 300 + Math.random() * 350;
+                        // Narrowed range across 1920x720 map for better clustering: 
+                        // x: 450 to 1470 (central beach area, ~1020px width)
+                        // y: 350 to 650 (beach play zone)
+                        const rx = 450 + Math.random() * 1020;
+                        const ry = 350 + Math.random() * 300;
                         if (used.every(p => Math.hypot(p.x - rx, p.y - ry) > minDist)) {
                             const pt = { x: rx, y: ry };
                             used.push(pt);
                             return pt;
                         }
                     }
-                    return { x: 400 + Math.random() * 1000, y: 400 + Math.random() * 200 };
+                    return { x: 800 + Math.random() * 320, y: 450 + Math.random() * 150 };
                 }
 
                 this.chars = players.map(p => {
