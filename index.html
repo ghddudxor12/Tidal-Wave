@@ -1163,17 +1163,17 @@
                 sfx.init();
                 this.targetDuration = dur; this.gameTime = 0;
 
-                // --- Extreme Scatter Logic (Environment-Aware) ---
+                // --- Scatter Logic (Left Beach Only) ---
                 const used = [];
                 const minDist = 55 * this.charScale;
 
                 const self = this;
                 function findPos() {
                     for (let i = 0; i < 400; i++) {
-                        // Restricted to SAFE beach area (Avoid trees/ocean): 
-                        // x: 350 to 900 (Stays on central sandy part of both 1280 and 1920 maps)
-                        // y: 350 to 650
-                        const rx = 350 + Math.random() * 550;
+                        // LEFT BEACH ONLY - strictly within sandy area:
+                        // x: 200 to 560 (sand zone, before ocean starts at ~600px in bg.png)
+                        // y: 350 to 650 (beach play zone)
+                        const rx = 200 + Math.random() * 360;
                         const ry = 350 + Math.random() * 300;
                         if (used.every(p => Math.hypot(p.x - rx, p.y - ry) > minDist)) {
                             const pt = { x: rx, y: ry };
@@ -1181,7 +1181,7 @@
                             return pt;
                         }
                     }
-                    return { x: 500 + Math.random() * 100, y: 500 + Math.random() * 100 };
+                    return { x: 300 + Math.random() * 150, y: 450 + Math.random() * 100 };
                 }
 
                 this.chars = players.map(p => {
